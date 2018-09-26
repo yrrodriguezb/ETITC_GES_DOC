@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+  	<!-- Configuracion vue and vuerify  -->
+	<link href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons' rel="stylesheet">
+	<link href="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css" rel="stylesheet">
+  <!-- Configuracion vue and vuerify  -->
+
+  <title>Adjuntar Documentos</title>
+
+  {% block style %}
+<style type="text/css">
+  .upload-btn-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    width: 100%;
+  }
+  
+  .upload-btn-wrapper input[type=file] {
+    font-size: 100px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+  }
+
+  a {
+    text-decoration: none;
+  }
+</style>
+{% endblock style %}
+</head>
+<body>
+  {% load filters %}
+
+  <div id="app">
+		<v-app id="inspire">
+      <template>
+        <v-container grid-list-md fill-height >
+          <v-layout row wrap white lg10>
+            {% block content %}     
+            <v-flex md12>
+              <h3 class="headline ma-3">Documentos adjuntos</h3>
+
+              <v-divider></v-divider>
+
+              <p class="subtitle mt-3 mx-3 mb-4">
+                  <strong>Tipo de Documento:</strong> {{ admitido.tipo_documento }}<br>
+                  <strong>Identificación</strong> {{ admitido.numero_identificacion }}<br>
+                  <strong>Admitido: </strong> {{ admitido }}
+              </p>
+
+              {% if files %}
+              <div style="overflow-y: auto;">
+                <table  class="v-datatable v-table elevation-2">
+                  <thead>
+                    <tr style="border-bottom: 1px solid rgba(0,0,0,0.12)">
+                      <th class="column text-xs-left">Tipo Documento</th>
+                      <th class="column text-xs-left">Archivo</th>
+                      <th class="column text-xs-left">Fecha</th>
+                      <th class="column text-xs-left">Aprobado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for file in files %}
+                    <tr>
+                      <td>{{ file.documento.descripcion }}</td>
+                      <td id="{{ file.pk }}">
+                        <a href="{{ MEDIA_URL }}{{ file.archivo.name }}" target="_blank">{{ file.archivo.name | get_text_from_index:'/' }}</a>
+                      </td>
+                      <td>{{ file.fecha_creacion | date:"d/m/Y P" }}</td>
+                      <td> <v-icon small color="success">{% if file.aprobado %}done{% endif %}</v-icon></td>
+                      <td>
+                        <v-btn icon ripple slot="activator" @click="eliminar_documento({{ file.pk }}, '{{ file.archivo.name | get_text_from_index }}')">
+                          <v-icon small color="error">delete</v-icon>
+                        </v-btn>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% else %}
+              <v-alert
+                value="true"
+                color="cyan darken-1"
+                icon="check_circle"
+                dismissible
+                transition="scale-transition"
+              >
+                <strong>Información</strong>
+                Aún no ha radicado ningún documento.
+              </v-alert>
+              {% endif %}
+    
+            </v-flex> 
+
+            <v-dialog v-model="dialog" persistent width="500px">
+              <v-form method="POST" enctype="multipart/form-data" :action="url">
+                {% csrf_token %}
+
+                <input type="hidden" name="admitido" value="{{ admitido.pk }}">
+
+                <v-card>
+                  <v-card-title v-if="accion == 'add'" class="primary white--text py-4 title">
+                    Agregar Documento
+                  </v-card-title>
+
+                  <v-card-title v-else class="error white--text py-4 title">
+                    Eliminar Documento ${ nombre_archivo }
+                  </v-card-title>
+
+                  <v-container grid-list-sm class="pa-4">
+                    <v-layout v-if="accion == 'add'" row wrap>
+                      
+                      <v-flex xs12 align-center justify-space-between>
+                        <v-select
+                          label="Tipo Documento"
+                          :items="documentos"
+                          item-value="id"
+                          item-text="descripcion"
+                          no-data-text="No hay documentos pendientes"
+                          v-model="tipo_documento"
+                          return-object
+                          clearable
+                        >
+                       </v-select>
+
+                       <input type="hidden" name="documento" :value="tipo_documento.id">
+                      </v-flex>
+
+                      <v-flex xs12>
+                        <div class="upload-btn-wrapper">
+                          <v-btn color="primary" style="width:100%">Subir Documento</v-btn>
+                          <input type="file" name="archivo" @change=""/>
+                        </div>
+                      </v-flex>
+                    </v-layout>
+
+                    <v-layout v-else>
+                      <v-flex>
+                          ¿Está usted seguro que quiere eliminar el registro seleccionado? 
+                          Todos los objetos y sus elementos relacionados serán borrados.<br/><br>
+                      </v-flex>
+                    </v-layout>
+                  </v-container>
+                  <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn :color="color" flat @click="cancelar">Cancelar</v-btn>
+                    <v-btn :color="color" flat type="submit">${ texto }</v-btn>
+                  </v-card-actions>
+                </v-card>
+              </v-form>
+            </v-dialog>
+
+            <v-btn
+              fab
+              bottom
+              right
+              color="pink"
+              dark
+              fixed
+              @click="dialog = !dialog; accion = 'add' "
+            >
+              <v-icon>add</v-icon>
+            </v-btn>
+           
+            {% endblock content %}
+          </v-layout>
+        </v-container>
+      </template>
+		</v-app>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1"></script>
+  <script type="text/javascript">
+    
+    Vue.options.delimiters = ['${', '}'];
+		Vue.http.options.emulateJSON = true;
+	
+    var app = new Vue({
+      el: '#app',
+      data () {
+        return {
+          dialog: false,
+          accion: '',
+          url: '',
+          nombre_archivo: '',
+          color: 'primary',
+          texto: 'Guardar',
+          tipo_documento: {
+            id: '',
+            descripcion: ''
+          },
+          documentos: []
+        }
+      },
+      methods: {
+        obtener_documentos(){
+          this.$http.get("{% url 'documentos_faltantes' %}").then((res) => {
+            this.documentos = res.body;
+          });
+        },
+        eliminar_documento(pk, filename){
+          this.accion = 'delete';
+          this.url = '{% url "eliminar_documentos" 0 %}'.replace('0', pk);
+          this.nombre_archivo = filename;
+          this.color = 'error';
+          this.texto = 'Eliminar',
+          this.dialog = true;
+        },
+        cancelar(){
+          this.accion = '';
+          this.url = '';
+          this.nombre_archivo = '';
+          this.color = 'primary';
+          this.texto = 'Guardar';
+          this.dialog = false;
+        }
+      },
+      created(){
+        this.obtener_documentos();
+      }
+    });
+	</script>
+
+</body>
+</html>

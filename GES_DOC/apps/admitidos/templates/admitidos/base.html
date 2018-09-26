@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+  <meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+	<!-- Configuracion vue and vuerify  -->
+	<link href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons' rel="stylesheet">
+	<link href="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css" rel="stylesheet">
+  <!-- Configuracion vue and vuerify  -->
+  
+  <style type="text/css">
+    ul.errorlist {
+      padding-left: 0;
+    }
+
+    ul.errorlist li {
+      list-style: none;
+    }
+
+    ul.nonfield > li {
+      color: red;
+      text-align: justify;
+    }
+  </style>
+
+  <title>
+    {% block title %}
+    {% endblock title %}
+  </title>
+</head>
+<body>
+  
+  <div id="app">
+		<v-app id="inspire">
+      <template>
+        <v-container grid-list-md fill-height>
+          <v-layout row wrap justify-center align-center>
+            {% block content %}         
+            {% endblock content %}
+          </v-layout>
+        </v-container>
+      </template>
+		</v-app>
+  </div>
+  
+  <!-- Configuracion vue and vuerify  -->
+	<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1"></script>
+  <script type="text/javascript">
+    
+    Vue.options.delimiters = ['${', '}'];
+		Vue.http.options.emulateJSON = true;
+		Vue.http.interceptors.push(function(request) {
+			request.headers.set('X-CSRFToken', getCookie('csrftoken'));
+		});
+
+
+		var getCookie = function(cname){
+			var name = cname + "=";
+			var decodedCookie = decodeURIComponent(document.cookie);
+			var ca = decodedCookie.split(';');
+			for(var i = 0; i <ca.length; i++) {
+					var c = ca[i];
+					while (c.charAt(0) == ' ') {
+							c = c.substring(1);
+					}
+					if (c.indexOf(name) == 0) {
+							return c.substring(name.length, c.length);
+					}
+			}
+			return "";
+		} 
+	
+	new Vue({
+		el: '#app',
+    data () {
+      return {  
+        dialog: true,
+        valid: true,
+        show: false,   
+        data: {
+          documento: '',
+          identificacion: '',
+          programa: '',
+          tipos_documentos: [],
+          programas: [],
+          admitido: {
+            programa:  '',
+            tipo_documento: '',
+            identificacion: ''
+          }
+        },
+        alert: {
+          value: false,
+          type: 'error',
+          msg: ''
+        },
+        progress: {
+          indeterminate: false,
+          active: false,
+          show: false
+        },
+        rules: {
+          text_numero_ident: [
+            v => !!v || 'El número de identificación es requerido.',
+            v => !!v && v.length > 5 && v.length < 21 || 'El número de identificacion debe tener entre 5 y 20 caracteres.'
+          ],
+          sel_programas: [
+            v => !!v.id || 'EL programa académico es rewquerido.'
+          ],
+          sel_tipodoc: [
+            v => !!v.codigo || 'El tipo de documento es requerido.'
+          ]
+        }
+      }
+    },
+    methods: {
+      submit () {
+        if (this.$refs.form.validate()) {
+          this.show_progress(true);
+          this.data.valid = false;
+
+          this.$http.post("{% url 'sesion_admitido' %}", {
+            programa:  this.data.admitido.programa.id,
+            tipo_documento: this.data.admitido.tipo_documento.codigo,
+            identificacion: this.data.admitido.identificacion
+          }).then(res => {
+            this.show_progress(false);
+            if (res.body.ok)
+              location.href = "{% url 'SGD_Index' %}";
+            else
+              this.show_alert(res.body);
+              
+          })
+          .catch(err => {
+            this.show_progress(false);
+          });
+        }
+      },
+      show_progress(value){
+        this.progress.active = value;
+        this.progress.indeterminate = value;
+        this.progress.show = value;
+      },
+      show_alert(data){
+        this.alert.value = !data.ok;
+        this.alert.msg = data.msg;
+
+        setTimeout(() => {
+          this.alert.value = false;
+        }, 5000)
+      }
+    },
+    created(){
+      this.show_progress(false);
+
+      this.$http.get("{% url 'tipo_documentos' %}").then((res) => {
+        this.data.tipos_documentos = res.body;
+      });
+
+      this.$http.get("{% url 'programas' %}").then((res) => {
+        this.data.programas = res.body;
+      })
+    }
+	});
+	</script>
+
+</body>
+</html>

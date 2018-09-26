@@ -1,0 +1,104 @@
+{% extends "admitidos/base.html" %}
+
+{% load static %}
+
+{% block title %}
+Admitidos
+{% endblock title %}
+
+{% block content %}
+<v-flex xs12 sm8 md5 lg4 >
+  <v-form 
+    method="POST" 
+    ref="form" 
+    v-model="valid" 
+    lazy-validation
+  >
+    {% csrf_token %}
+
+    <v-card>         
+      <v-card-title>
+        <div>
+          <h3 style="text-align: center" class="headline mb-0">
+						Admisiones
+					</h3> <br>
+          <div>
+            Por favor, ingrese sus datos para continuar con el proceso de admisiones.
+          </div>
+        </div>
+      </v-card-title>
+
+      <v-divider></v-divider>
+
+      <v-card-text>
+        <v-select
+          :items="data.programas"
+          item-text="descripcion"
+          item-value="id"
+          v-model="data.admitido.programa"
+          label="Programa Académico"
+          persistent-hint
+          return-object
+          single-line
+          clearable
+          :rules="rules.sel_programas"
+        ></v-select>
+
+        <v-select
+          :items="data.tipos_documentos"
+          item-text="descripcion"
+          item-value="codigo"
+          v-model="data.admitido.tipo_documento"
+          label="Tipo de Documento"
+          persistent-hint
+          return-object
+          single-line
+          clearable
+          :rules="rules.sel_tipodoc"
+        ></v-select>
+
+				<v-text-field
+					clearable
+					class="mb-2"
+					v-model="data.admitido.identificacion"
+					name="numero_identificacion" 
+					label="Número Identificación" 
+          required
+          clearable
+          :rules="rules.text_numero_ident"
+        ></v-text-field>
+
+        <v-alert
+          :value="alert.value"
+          :type="alert.success"
+          transition="scale-transition"
+          outline
+        >
+          ${ alert.msg }
+        </v-alert>
+			</v-card-text>
+
+      <v-progress-linear
+        v-show="progress.show" 
+        :indeterminate="progress.indeterminate"
+        :active="progress.active"
+        color="success"
+       >
+      </v-progress-linear>
+
+      <v-card-actions>
+				<v-btn 
+					type="submit" 
+					color="info" 
+					flat
+					block
+					:disabled="!valid"
+					@click.prevent="submit">
+					Verificar
+				</v-btn>
+			</v-card-actions>
+	
+    </v-card>
+	</v-form>
+</v-flex>
+{% endblock content %}
