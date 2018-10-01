@@ -16,6 +16,7 @@ class IndexTemplateView(TemplateView):
     def get(self, request, *args, **kwargs):
         request.session.set_expiry(0)
         request.session.get_expire_at_browser_close()
+      
 
         if  request.session.get('ID_ADMITIDO', None) and request.session.get('ID_PROGRAMA', None) and request.session.get('ID_PERIODO', None):
             return HttpResponseRedirect(reverse_lazy('SGD_Index'))

@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class GestionDocumentalConfig(AppConfig):
-    name = 'gestion documental'
+    name = 'apps.gestion_documental'
     verbose_name = 'Gestión Documental'

@@ -124,24 +124,10 @@
     methods: {
       submit () {
         if (this.$refs.form.validate()) {
+          this.alert.value = false;
           this.show_progress(true);
           this.data.valid = false;
-
-          this.$http.post("{% url 'sesion_admitido' %}", {
-            programa:  this.data.admitido.programa.id,
-            tipo_documento: this.data.admitido.tipo_documento.codigo,
-            identificacion: this.data.admitido.identificacion
-          }).then(res => {
-            this.show_progress(false);
-            if (res.body.ok)
-              location.href = "{% url 'SGD_Index' %}";
-            else
-              this.show_alert(res.body);
-              
-          })
-          .catch(err => {
-            this.show_progress(false);
-          });
+          this.verificar();
         }
       },
       show_progress(value){
@@ -152,10 +138,24 @@
       show_alert(data){
         this.alert.value = !data.ok;
         this.alert.msg = data.msg;
-
+      },
+      verificar(){
         setTimeout(() => {
-          this.alert.value = false;
-        }, 5000)
+          this.$http.post("{% url 'sesion_admitido' %}", {
+            programa:  this.data.admitido.programa.id,
+            tipo_documento: this.data.admitido.tipo_documento.codigo,
+            identificacion: this.data.admitido.identificacion
+          }).then(res => {
+            this.show_progress(false);
+            if (res.body.ok)
+                location.href = "{% url 'SGD_Index' %}";
+            else 
+              this.show_alert(res.body);              
+          })
+          .catch(err => {
+            this.show_progress(false);
+          });
+        }, 1000);
       }
     },
     created(){

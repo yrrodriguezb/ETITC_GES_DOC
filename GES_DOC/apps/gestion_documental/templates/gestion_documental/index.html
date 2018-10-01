@@ -41,7 +41,7 @@
   <div id="app">
 		<v-app id="inspire">
       <template>
-        <v-container grid-list-md fill-height >
+        <v-container grid-list-md >
           <v-layout row wrap white lg10>
             {% block content %}     
             <v-flex md12>
@@ -50,12 +50,55 @@
               <v-divider></v-divider>
 
               <p class="subtitle mt-3 mx-3 mb-4">
-                  <strong>Tipo de Documento:</strong> {{ admitido.tipo_documento }}<br>
-                  <strong>Identificación</strong> {{ admitido.numero_identificacion }}<br>
-                  <strong>Admitido: </strong> {{ admitido }}
+                <strong>Tipo de Documento:</strong> {{ admitido.tipo_documento }}<br>
+                <strong>Identificación</strong> {{ admitido.numero_identificacion }}<br>
+                <strong>Admitido: </strong> {{ admitido }}<br>
+                <strong>Programa: </strong> {{ admitido.programa }} {{ admitido.jornada.get_jornada_display }}
               </p>
+            </v-flex> 
 
-              {% if files %}
+            {% if not aprobados %}
+            <v-flex xs12>
+              <v-form method="POST" enctype="multipart/form-data" action="{% url 'SGD_Index' %}">
+                {% csrf_token %}
+
+                <input type="hidden" name="admitido" value="{{ admitido.pk }}">
+                <input type="hidden" name="documento" :value="tipo_documento.id">
+
+                <v-container>
+                  <v-layout>
+                    <v-flex xs12 md6>
+                      <v-select
+                        label="Tipo Documento"
+                        :items="documentos"
+                        item-value="id"
+                        item-text="descripcion"
+                        no-data-text="No hay documentos pendientes"
+                        v-model="tipo_documento"
+                        return-object
+                        clearable
+                      >
+                      </v-select>
+                    </v-flex>
+                    
+                    <v-flex xs12 md2>
+                      <div class="upload-btn-wrapper">
+                        <v-btn color="primary" style="width:100%">Subir Documento</v-btn>
+                        <input type="file" name="archivo" @change=""/>
+                      </div>
+                    </v-flex>
+                    
+                    <v-flex xs12 md2>
+                      <v-btn color="primary" style="width:98.5%;" type="submit">Guardar</v-btn>
+                    </v-flex>
+                  </v-layout>
+                </v-container>
+              </v-form>     
+            </v-flex>
+            {% endif %}
+
+            {% if files %}
+            <v-flex xs12 md12 lg12>
               <div style="overflow-y: auto;">
                 <table  class="v-datatable v-table elevation-2">
                   <thead>
@@ -64,7 +107,9 @@
                       <th class="column text-xs-left">Archivo</th>
                       <th class="column text-xs-left">Fecha</th>
                       <th class="column text-xs-left">Aprobado</th>
+                      {% if not aprobados %}
                       <th></th>
+                      {% endif %}
                     </tr>
                   </thead>
                   <tbody>
@@ -76,100 +121,79 @@
                       </td>
                       <td>{{ file.fecha_creacion | date:"d/m/Y P" }}</td>
                       <td> <v-icon small color="success">{% if file.aprobado %}done{% endif %}</v-icon></td>
+                      {% if not aprobados %}
                       <td>
                         <v-btn icon ripple slot="activator" @click="eliminar_documento({{ file.pk }}, '{{ file.archivo.name | get_text_from_index }}')">
                           <v-icon small color="error">delete</v-icon>
                         </v-btn>
                       </td>
+                      {% endif %}
                     </tr>
                     {% endfor %}
                   </tbody>
                 </table>
               </div>
-              {% else %}
+            </v-flex>
+            {% else %}
+            <v-flex xs12 md12 lg12>
               <v-alert
+                class="mx-3 mb-3"
                 value="true"
-                color="cyan darken-1"
-                icon="check_circle"
+                color="info"
                 dismissible
                 transition="scale-transition"
               >
                 <strong>Información</strong>
                 Aún no ha radicado ningún documento.
               </v-alert>
-              {% endif %}
-    
-            </v-flex> 
+            </v-flex>
+            {% endif %}
+
+            {% if aprobar and not aprobados %}
+            <v-flex class="mx-3 mb-3">
+              <v-btn color="success" @click="aprobar_documentos">Aprobar Documentación</v-btn>
+            </v-flex>
+            {% endif %}
 
             <v-dialog v-model="dialog" persistent width="500px">
-              <v-form method="POST" enctype="multipart/form-data" :action="url">
+              <v-form method="POST" :action="url">
                 {% csrf_token %}
 
                 <input type="hidden" name="admitido" value="{{ admitido.pk }}">
 
                 <v-card>
-                  <v-card-title v-if="accion == 'add'" class="primary white--text py-4 title">
-                    Agregar Documento
-                  </v-card-title>
-
-                  <v-card-title v-else class="error white--text py-4 title">
+                  <v-card-title v-if="accion == 'eliminar'" class="error white--text py-4 title">
                     Eliminar Documento ${ nombre_archivo }
                   </v-card-title>
 
+                  <v-card-title v-else class="success white--text py-4 title">
+                    Aprobar Documentos
+                  </v-card-title>
+
+
                   <v-container grid-list-sm class="pa-4">
-                    <v-layout v-if="accion == 'add'" row wrap>
-                      
-                      <v-flex xs12 align-center justify-space-between>
-                        <v-select
-                          label="Tipo Documento"
-                          :items="documentos"
-                          item-value="id"
-                          item-text="descripcion"
-                          no-data-text="No hay documentos pendientes"
-                          v-model="tipo_documento"
-                          return-object
-                          clearable
-                        >
-                       </v-select>
-
-                       <input type="hidden" name="documento" :value="tipo_documento.id">
+                    <v-layout>
+                      <v-flex v-if="accion == 'eliminar'">
+                        ¿Está usted seguro que quiere eliminar el registro seleccionado? 
+                        Todos los objetos y sus elementos relacionados serán borrados.<br/><br>
                       </v-flex>
 
-                      <v-flex xs12>
-                        <div class="upload-btn-wrapper">
-                          <v-btn color="primary" style="width:100%">Subir Documento</v-btn>
-                          <input type="file" name="archivo" @change=""/>
-                        </div>
-                      </v-flex>
-                    </v-layout>
-
-                    <v-layout v-else>
-                      <v-flex>
-                          ¿Está usted seguro que quiere eliminar el registro seleccionado? 
-                          Todos los objetos y sus elementos relacionados serán borrados.<br/><br>
+                      <v-flex v-else>
+                        ¿Esta seguro de aprobar la documentación adjunta?. 
+                        Despues de realizar este proceso no podra modificar dichos documentos.<br/><br/> 
                       </v-flex>
                     </v-layout>
                   </v-container>
+
                   <v-card-actions>
                     <v-spacer></v-spacer>
                     <v-btn :color="color" flat @click="cancelar">Cancelar</v-btn>
-                    <v-btn :color="color" flat type="submit">${ texto }</v-btn>
+                    <v-btn :color="color" flat type="submit">${texto_boton}</v-btn>
                   </v-card-actions>
+
                 </v-card>
               </v-form>
             </v-dialog>
-
-            <v-btn
-              fab
-              bottom
-              right
-              color="pink"
-              dark
-              fixed
-              @click="dialog = !dialog; accion = 'add' "
-            >
-              <v-icon>add</v-icon>
-            </v-btn>
            
             {% endblock content %}
           </v-layout>
@@ -191,11 +215,11 @@
       data () {
         return {
           dialog: false,
-          accion: '',
-          url: '',
+          url: '{% url "eliminar_documentos" 0 %}',
           nombre_archivo: '',
-          color: 'primary',
-          texto: 'Guardar',
+          accion: '',
+          color: 'error',
+          texto_boton: '',
           tipo_documento: {
             id: '',
             descripcion: ''
@@ -210,19 +234,25 @@
           });
         },
         eliminar_documento(pk, filename){
-          this.accion = 'delete';
+          this.accion = 'eliminar';
+          this.color = 'error';
+          this.texto_boton = 'Eliminar';
           this.url = '{% url "eliminar_documentos" 0 %}'.replace('0', pk);
           this.nombre_archivo = filename;
-          this.color = 'error';
-          this.texto = 'Eliminar',
+          this.dialog = true;
+        },
+        aprobar_documentos(){
+          this.accion ='aprobar';
+          this.color = 'success';
+          this.texto_boton = 'Aprobar'
+          this.url = '{% url "aprobar_documentos" %}';
           this.dialog = true;
         },
         cancelar(){
           this.accion = '';
-          this.url = '';
+          this.color = 'error';
+          this.url = '{% url "eliminar_documentos" 0 %}';
           this.nombre_archivo = '';
-          this.color = 'primary';
-          this.texto = 'Guardar';
           this.dialog = false;
         }
       },

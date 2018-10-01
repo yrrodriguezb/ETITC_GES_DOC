@@ -9,9 +9,15 @@ class DocumentoAdmin(admin.ModelAdmin):
 
 
 class DocumentoAdmitidoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'archivo', 'aprobado', 'admitido', 'documento', )
+    list_display = ('id', 'documento', 'archivo', 'admitido', 'aprobado',)
     list_display_links = ('id',)
-    readonly_fields = ('admitido', 'fecha_creacion', 'fecha_edicion',)
+    search_fields = ('archivo',)
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ['admitido', 'documento', 'aprobado', 'fecha_creacion', 'fecha_edicion',]
+        else:
+            return []
 
 
 admin.site.register(Documento, DocumentoAdmin)

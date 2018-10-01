@@ -16,7 +16,10 @@ def custom_upload_to(instance, filename):
         old_instance.archivo.delete()
     except:
         pass
-    return 'admitidos/{0}/{1}/{2}/{3}'.format(strftime('%Y'), periodo, instance.admitido.pk, filename)
+    return 'admitidos/{0}/{1}/{2}/{3}/{4}.{5}'.format(
+        strftime('%Y'), periodo, instance.admitido.pk,
+        instance.documento.pk, instance.admitido.numero_identificacion, 
+        filename.split('.')[-1])
 
 
 class Documento(models.Model):
@@ -42,8 +45,8 @@ class DocumentoAdmitido(models.Model):
     fecha_edicion = models.DateTimeField(auto_now=True, verbose_name="Fecha de edición")
 
     class Meta:
-        verbose_name = 'Documento Radicado de Admitidos'
-        verbose_name_plural = 'Documentos Radicados de Admitidos'
+        verbose_name = 'Documento Radicado'
+        verbose_name_plural = 'Documentos Radicados'
         ordering = ['admitido', 'fecha_creacion', 'fecha_edicion',]
 
     def __str__(self):

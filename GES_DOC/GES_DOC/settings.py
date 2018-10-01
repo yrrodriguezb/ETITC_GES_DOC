@@ -37,10 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_admin_listfilter_dropdown',
+    'import_export',
     'apps.admitidos',
     'apps.documentos',
-    'apps.gestion_documental',
-    'apps.programas',
+    'apps.gestion_documental.apps.GestionDocumentalConfig',
+    'apps.programas.apps.ProgramasConfig',
 ]
 
 MIDDLEWARE = [

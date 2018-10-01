@@ -6,6 +6,12 @@ from apps.programas.models import Programa
 
 
 class Admitido(models.Model):
+
+    CHOICES_JORNADA = (
+        ('1', 'Jornada Tarde - 2pm a 6pm'),
+        ('2', 'Jornada Nocturna - 6pm a 10pm'),
+    )
+
     tipo_documento = models.ForeignKey(TipoDocumento, on_delete=models.PROTECT, verbose_name='Tipo de Documento')
     numero_identificacion = models.CharField(max_length=20, verbose_name='Número de Identificación')
     primer_nombre = models.CharField(max_length=50, verbose_name='Primer Nombre')
@@ -13,6 +19,7 @@ class Admitido(models.Model):
     primer_apellido = models.CharField(max_length=50, verbose_name='Primer Apellido')
     segundo_apellido = models.CharField(max_length=50, verbose_name='Segundo Apellido', null=True, blank=True)
     programa = models.ForeignKey(Programa, on_delete=models.PROTECT, verbose_name='Programa')
+    jornada = models.CharField(max_length=5, choices=CHOICES_JORNADA, null=True, verbose_name='Jornada')
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
     fecha_edicion = models.DateTimeField(auto_now=True, verbose_name="Fecha de edición")
 
